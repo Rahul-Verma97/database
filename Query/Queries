@@ -1,0 +1,167 @@
+Queries
+
+Find the model number, speed, and hard-disk size for all PC’s whose price is under $1000. 
+Ans:
+                  QUERY: SELECT model, speed,hd FROM PC WHERE price<1000;
+Do the same as (a), but rename the speed column gigahertz and the hd column gigabytes.
+ Ans:
+                     QUERY: SELECT model, speed AS gigahertz,hd AS gigabytes FROM PC 
+                                      WHERE price<1000;
+Find the manufacturers of printers. 
+Ans:
+
+   QUERY:    SELECT DISTINCT maker FROM Product WHERE type=” printer”;
+
+Find the model number, memory size, and screen size for laptops costing more than $1500. 
+Ans: 
+  QUERY:   SELECT model, ram, screen FROM Laptop WHERE price>1500.
+Find all the tuples in the Printer relation for color printers. Remember that color is a boolean-valued attribute
+. Ans 
+    QUERY: SELECT * FROM PrinterWHERE color=true;
+Find the model number and hard-disk size for those PC’s that have a speed of 3.2 and a price less than $2000. 
+ANS 
+    QUERY:  SELECT model,hd FROM PC WHERE speed=3.2 AND price<2000;
+
+Give the manufacturer and speed of laptops with a hard disk of at least thirty gigabytes. 
+Ans:
+
+QUERY:    SELECT DISTINCT maker FROM  Product WHERE  model IN (SELECT model FROM Laptop WHERE hd>=30);
+
+Find the model number and price of all products (of any type) made by manufacturer B.
+Ans:
+
+ QUERY:     SELECT PC.model FROM PC, Product WHERE PC.model=Product.model and maker="B"
+UNION 
+SELECT Laptop.model FROM Laptop, Product WHERE Laptop.model=Product.model and maker="B";
+
+Find those manufacturers that sell Laptops, but not PC’s. 
+ANS:
+
+ QUERY: SELECT DISTINCT maker from WHERE type=” Laptops” OR type=” PC”
+    MINUS
+  SELECT DISTINCT  maker from WHERE type=” PC
+
+Find those hard-disk sizes that occur in two or more PC ’s. 
+ANS:
+ QUERY:       SELECT  hd FROM (SELECT hd, count(*) AS count from PC GROUP BY hd) AS
+        tbl  WHERE count>1
+1)Find those pairs of PC models that have both the same speed and RAM. A pair should be listed only once; e.g., list (i,j) but not (j,i). 
+Ans:
+QUERY:SELECT PC1.model ,PC2.model FROM PC as PC1,PC AS PC2 WHERE PC1.speed=PC2.speed and PC1.ram=PC2.ram and PC1.model<PC2.model;
+
+2)Find those manufacturers of at least two different computers (PC’s or laptops) with speeds of at least 3.0. 
+              ANS:
+ 
+                  QUERY: SELECT p.maker, count(*) FROM product p
+                  LEFT JOIN  pc ON p.model=pc.model
+                  LEFT JOIN laptop on p.model=laptop.model
+                  WHERE COALESCE (pc.speed,laptop.speed)>3.0
+                   GROUP BY maker
+                  HAVING count(*)>1
+                  
+3)Find the makers of PC ’s with a speed of at least 3.0. 
+               ANS
+  QUERY:   SELECT DISTINCT maker FROM  Product WHERE model IN (SELECT model FROM PC WHERE speed>3.0)
+
+
+
+4)Find the printers with the highest price. 
+     ANS
+
+  QUERY:  SELECT * FROM printer WHERE price>=ALL(SELECT price FROM
+                       printer)
+                       
+5)Find the laptops whose speed is slower than that of any PC. 
+   ANS:
+      QUERY:   SELECT * FROM laptop WHERE speed<ANY(SELECT speed   
+                        FROM PC)
+                        
+6)Find the model number of the item (PC, laptop, or printer) with the highest price. 
+  ANS:
+ QUERY:  SELECT model FROM (
+SELECT model, price FROM PC WHERE price>=ALL(SELECT price FROM PC)
+UNION
+SELECT model, price FROM Laptop WHERE price>=ALL(SELECT price FROM Laptop)
+UNION
+SELECT model, price FROM printer WHERE price>=ALL(SELECT price FROM printer)) AS tbl
+WHERE price>=ALL(
+SELECT price FROM PC WHERE price>=ALL(SELECT price FROM PC)
+UNION
+SELECT price FROM Laptop WHERE price>=ALL(SELECT price FROM Laptop)
+UNION
+SELECT price FROM printer WHERE price>=ALL(SELECT price FROM printer)) ;
+
+7)Find the maker of the color printer with the lowest price. 
+ANS
+ QUERY: SELECT DISTINCT maker FROM Product where model IN(SELECT model FROM Printer WHERE price<=ALL(SELECT price FROM Printer WHERE color=" true")  AND color=" true")
+
+8)Find the maker(s) of the PC(s) with the fastest processor among all those PC’s that have the smallest amount of RAM. 
+ANS
+
+ QUERY: SELECT DISTINCT maker FROM Product, PC
+
+WHERE Product.model=PC.model
+
+AND  ram <= ALL (SELECT ram FROM PC)
+
+AND speed >= ALL (SELECT speed FROM PC WHERE ram=(SELECT min(ram) FROM PC))
+Find the average speed of PC’s. 
+ANS
+
+8) QUERY:  SELECT AVG(speed) FROM PC
+ 
+Find the average speed of laptops costing over $1000. 
+   ANS
+   QUERY:   SELECT AVG(speed) FROM Laptop where price>1000;
+ 9)Find the average price of PCs made by manufacturer “A.” 
+     ANS:
+     QUERY:   SELECT AVG(price) FROM PC,Product WHERE PC.model=Product.model AND     
+      maker="A";
+             
+10)Find the average price of PC’s and laptops made by manufacturer “D.” 
+ANS 
+QUERY:
+       SELECT AVG(price) AS average FROM (SELECT PC.model,price FROM    
+     PC,Product WHERE PC.model=Product.model AND maker="D"
+     UNION 
+     SELECT Laptop.model,price FROM Laptop,Product WHERE  
+      Laptop.model=Product.model AND maker="D") AS tbl;
+11)Find, for each different speed, the average price of a PC. 
+ANS:
+ QUERY: SELECT speed, AVG(price) as AVERAGE FROM PC GROUP BY speed;
+
+12)Find for each manufacturer, the average screen size of its laptops. 
+ANS
+QUERY:
+SELECT  DISTINCT maker, AVG(screen) as AVERAGE FROM LAPTOP, PRODUCT WHERE Laptop.model=Product.model GROUP BY maker;
+
+
+13)Find the manufacturers that make at least three different models of PC. 
+ 
+      QUERY:   ANS :
+          SELECT DISTINCT maker, COUNT(model) AS CNT FROM Product GROUP BY 
+          maker HAVING CNT>=3;
+14)Using two INSERT statements, store in the database the fact that PC model 1100 is made by manufacturer C, has speed 3.2, RAM 1024, hard disk 180, and sells for $2499.
+ANS
+
+           INSERT INTO product(maker,model,type) VALUES ("A",1100,"PC")
+           INSERT INTO PC (model, speed, ram, hd, price) VALUES (1100,3.2,1024,180,2499);
+15)Delete all PC ’s with less than 100 gigabytes of hard disk.
+
+          DELETE FROM PC WHERE hd<100 
+          
+17)Delete all laptops made by a manufacturer that doesn’t make printers. 
+ANS
+DELETE FROM Laptop L WHERE NOT EXISTS ( SELECT * FROM Product P1, Product P2 WHERE P1.model = L.model AND P1.maker = P2.maker AND P2.type = ’printer’ ); 
+DELETE FROM Product P WHERE P.type = ’laptop’ AND NOT EXISTS ( SELECT * FROM Product P1, Product P2 WHERE P1.model = P.model AND P1.maker = P2.maker AND P2.type = ’printer’ ); 
+
+18)Manufacturer A buys manufacturer B. Change all products made by B so they are now made by A. 
+ANS:
+ UPDATE product
+SET maker='A'
+WHERE maker='B';
+
+19)For each PC, double the amount of RAM and add 60 gigabytes to the amount of hard disk. (Remember that several attributes can be changed by one UPDATE statement.) 
+UPDATE pc
+SET ram = ram * 2, hd = hd + 1;
+
